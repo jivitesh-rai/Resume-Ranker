@@ -1,7 +1,13 @@
+"""
+This module contains functions for performing mathematical operations.
+"""
+__import__('pysqlite3')
+import sys
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 import chromadb
 import streamlit as st
 from PyPDF2 import PdfReader
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
 from htmlTemplates import css, table_template
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
@@ -34,7 +40,7 @@ def get_text_chunks(text):
 def get_vectorstore(text_chunks, job_description):
     chroma_client = chromadb.Client()
     collection = chroma_client.create_collection(name="my_collection")
-    metadata = ["mysource" for i in range(len(text_chunks))]
+    #metadata = ["mysource" for i in range(len(text_chunks))]
     collection.add(
         documents=[f"{text_chunks[i]}" for i in range(len(text_chunks))],
         ids=[f"{k}" for k in range(len(text_chunks))]
@@ -71,14 +77,14 @@ def normalize_rank_table(rank_table):
     pass
 
 def main():
-    load_dotenv()
+    #load_dotenv()
     st.set_page_config(page_title="Resume Ranker", page_icon=":books:")
     st.write(css, unsafe_allow_html=True)
 
     if "rank_table" not in st.session_state:
         st.session_state.rank_table = None
 
-    st.header("Resume RankPro :books:")
+    st.header("Resume Ranker :books:")
     job_description = st.text_input("Enter Job Description: ")
 
     with st.sidebar:
