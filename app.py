@@ -79,11 +79,12 @@ def get_rank_table(vectorstore, pdf_names):
     return rank_table
 
 def create_rank_table(rank_table):
-    rank_frame = pd.DataFrame(rank_table)
+    rank_frame = rank_table
     st.dataframe(rank_frame)
     return rank_frame
 
 def download_rank_table(rank_table):
+    rank_table = pd.DataFrame(rank_table)
     csv_button = st.download_button(
                     label='Download CSV',
                     data=rank_table.to_csv(index=False),
