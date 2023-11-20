@@ -8,7 +8,6 @@ import chromadb
 import streamlit as st
 import pandas as pd
 from PyPDF2 import PdfReader
-from htmlTemplates import css, table_template
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 
@@ -100,7 +99,6 @@ def normalize_rank_table(rank_table):
 def main():
    
     st.set_page_config(page_title="Resume Ranker", page_icon=":books:")
-    st.write(css, unsafe_allow_html=True)
 
     if "rank_table" not in st.session_state:
         st.session_state.rank_table = None
