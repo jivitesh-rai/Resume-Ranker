@@ -6,11 +6,18 @@ import sys
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 import chromadb
 import streamlit as st
+import pandas as pd
 from PyPDF2 import PdfReader
-#from dotenv import load_dotenv
 from htmlTemplates import css, table_template
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
+
+def get_pdf_names(pdf_docs):
+    total_pdfs = len(pdf_docs)
+    pdf_names = []
+    for i in range(total_pdfs):
+        pdf_names.append((i, pdf_docs[i].name))
+    return pdf_names
 
 
 def get_pdf_text(pdf_docs):
@@ -26,7 +33,7 @@ def get_pdf_text(pdf_docs):
 
 def get_text_chunks(text):
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=10000,
+        chunk_size=100000,
         chunk_overlap=0,
         length_function=len
     )
@@ -52,32 +59,45 @@ def get_vectorstore(text_chunks, job_description):
     )
     return results
 
+
 def percentage(match):
     res = (1/(1+match))*100
     return f'{res:.2f}%'
 
-def get_rank_table(vectorstore):
-    rank_table = []
+
+def get_rank_table(vectorstore, pdf_names):
+    rank_table = {"Rank": [], 
+                  "Name": [], 
+                  "Match": []
+                  }
     for i in range(len((vectorstore["ids"])[0])):
         l2_dist = (vectorstore["distances"][0])[i]
-        rank_table.append({
-            "Rank": f'{i+1}',
-            "Name": f'{(vectorstore["ids"][0])[i]}',
-            "Match": f'{percentage(l2_dist)}'
-        })
+        id = int((vectorstore["ids"][0])[i])
+        rank_table["Rank"].append(f'{i+1}')
+        rank_table["Name"].append(f'{pdf_names[id][1]}')
+        rank_table["Match"].append(f'{percentage(l2_dist)}')
     return rank_table
 
 def create_rank_table(rank_table):
-    for rank in rank_table:
-        st.write(table_template.replace("{{Rank}}", rank["Rank"]).replace("{{Name}}", rank["Name"])
-                 .replace("{{Match}}", rank["Match"]), unsafe_allow_html=True)
+    rank_frame = pd.DataFrame(rank_table)
+    st.dataframe(rank_frame)
+    return rank_frame
+
+def download_rank_table(rank_table):
+    csv_button = st.download_button(
+                    label='Download CSV',
+                    data=rank_table.to_csv(index=False),
+                    file_name='data.csv',
+                    mime='text/csv'
+)
+
 
 def normalize_rank_table(rank_table):
     # use this as an extra feature button
     pass
 
 def main():
-    #load_dotenv()
+   
     st.set_page_config(page_title="Resume Ranker", page_icon=":books:")
     st.write(css, unsafe_allow_html=True)
 
@@ -94,6 +114,9 @@ def main():
 
     if st.button("Analyze"):
         with st.spinner("Processing"):
+            # get pdf names
+            pdf_names = get_pdf_names(pdf_docs)
+
             # get pdf text
             raw_text = get_pdf_text(pdf_docs)
 
@@ -105,18 +128,14 @@ def main():
             if job_description:
                 vectorstore = get_vectorstore(text_chunks, job_description)
 
-            rank = get_rank_table(vectorstore)
+            rank = get_rank_table(vectorstore, pdf_names)
+            
+            # create the table for display
+            rank_frame = create_rank_table(rank)
 
-            create_rank_table(rank)
+            download_rank_table(rank_frame)
 
-            # st.session_state.rank_table = create_rank_table(rank)
-
-    #     # Print the table in the main page
-    # if st.session_state.rank_table:
-    #     table_container = st.container()
-    #     with table_container:
-    #         st.write("Rank Table:")
-    #         st.dataframe(st.session_state.rank_table)
+            
 
 
 if __name__ == "__main__":
