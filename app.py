@@ -79,7 +79,7 @@ def get_rank_table(vectorstore, pdf_names):
 
 def create_rank_table(rank_table):
     rank_frame = rank_table
-    st.dataframe(rank_frame)
+    st.dataframe(rank_frame, use_container_width=True)
     return rank_frame
 
 def download_rank_table(rank_table):
